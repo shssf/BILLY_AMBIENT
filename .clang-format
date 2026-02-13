@@ -1,0 +1,71 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+UseTab: Never
+Language: Cpp
+Standard: Cpp11
+
+AccessModifierOffset: -4
+
+AlignConsecutiveDeclarations: false
+AlignConsecutiveAssignments: false
+AlignConsecutiveMacros: true
+AlignTrailingComments: true
+AlignEscapedNewlines: Right
+
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakTemplateDeclarations: true
+AlignArrayOfStructures: Left
+
+BinPackArguments: false
+BinPackParameters: false
+
+BreakConstructorInitializersBeforeComma: true
+
+BraceWrapping:
+  AfterClass:      true
+#  AfterVariable:   true
+  AfterControlStatement: true
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  true
+  AfterObjCDeclaration: true
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     true
+  BeforeElse:      true
+  IndentBraces:    false
+BreakBeforeBraces: Custom
+
+ColumnLimit: 140
+CommentPragmas: '.*'
+
+IndentCaseLabels: false
+IndentWrappedFunctionNames: true
+
+KeepEmptyLinesAtTheStartOfBlocks: false
+NamespaceIndentation: All
+
+PointerAlignment: Left
+SpaceAfterCStyleCast: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+
+ReflowComments: true
+
+IncludeCategories:
+  - Regex:           '^".*'
+    Priority:        3
+  - Regex:           '^<.*'
+    Priority:        2
+SortIncludes: true

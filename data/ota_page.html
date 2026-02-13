@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OTA Update</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        margin: 16px;
+        max-width: 720px;
+      }
+
+      button {
+        padding: 0.6rem 1rem;
+        margin-top: 8px;
+      }
+
+      #bar {
+        height: 12px;
+        background: #111;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 12px;
+      }
+
+      #bar > div {
+        height: 100%;
+        width: 0;
+        background: #2f74ff;
+        transition: width 0.1s linear;
+      }
+
+      pre {
+        background: #111;
+        color: #eee;
+        padding: 10px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        min-height: 1.4em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>OTA Update</h1>
+    <p>Select a .bin firmware file and press Upload.</p>
+    <input id="f" type="file" accept=".bin,application/octet-stream" />
+    <br />
+    <button id="u" type="button">Upload & Flash</button>
+    <div id="bar">
+      <div></div>
+    </div>
+    <pre id="log"></pre>
+    <script>
+      'use strict';
+      function byId(id) {
+        return document.getElementById(id);
+      }
+      function logln(t) {
+        const l = byId('log');
+        l.textContent += t + '\n';
+        l.scrollTop = l.scrollHeight;
+        console.log(t);
+      }
+      function setProg(p) {
+        const v = Math.max(0, Math.min(100, Math.floor(p)));
+        byId('bar').firstElementChild.style.width = v + '%';
+      }
+      document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+          var btn = byId('u');
+          var file = byId('f');
+          setProg(0);
+          btn.addEventListener(
+            'click',
+            function () {
+              if (!file.files || file.files.length === 0) {
+                logln('Choose a .bin file first');
+                return;
+              }
+              var blob = file.files[0];
+              logln('Uploading ' + blob.name + ' (' + blob.size + ' bytes)');
+              setProg(0);
+              var xhr = new XMLHttpRequest();
+              xhr.open('POST', '/update', true);
+              xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+              xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                  setProg((e.loaded / e.total) * 100);
+                }
+              };
+              xhr.onload = function () {
+                logln('HTTP ' + xhr.status);
+                logln(xhr.responseText || '');
+                if (xhr.status === 200) {
+                  setProg(100);
+                }
+              };
+              xhr.onerror = function () {
+                logln('Network error');
+              };
+              xhr.ontimeout = function () {
+                logln('Timeout');
+              };
+              try {
+                xhr.send(blob);
+              } catch (e) {
+                logln('Send failed: ' + e);
+              }
+            },
+            false
+          );
+        },
+        false
+      );
+    </script>
+  </body>
+</html>

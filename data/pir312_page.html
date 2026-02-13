@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PIR312</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        margin: 16px;
+        max-width: 720px;
+      }
+
+      pre {
+        background: #111;
+        color: #eee;
+        padding: 10px;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        min-height: 1.4em;
+      }
+
+      .row {
+        margin: 8px 0;
+      }
+
+      .mono {
+        font-family: ui-monospace, Consolas, monospace;
+      }
+
+      .weak {
+        color: #888;
+      }
+
+      .ok {
+        color: #19b300;
+      }
+
+      .bad {
+        color: #ff5a36;
+      }
+
+      button {
+        padding: 0.6rem 1rem;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>PIR312</h1>
+
+    <div class="row mono">
+      LED:
+      <span id="led">-</span>
+    </div>
+    <div class="row mono">
+      PIR common:
+      <span id="common">-</span>
+    </div>
+    <div class="row mono">
+      Boxes: L=
+      <span id="L">-</span>
+      , LC=
+      <span id="LC">-</span>
+      , RC=
+      <span id="RC">-</span>
+      , R=
+      <span id="R">-</span>
+    </div>
+
+    <div class="row weak mono">
+      Last update:
+      <span id="ts">-</span>
+    </div>
+    <div class="row">
+      <button id="refresh" type="button">Refresh now</button>
+    </div>
+
+    <pre id="log"></pre>
+
+    <script>
+      'use strict';
+      function byId(id) {
+        return document.getElementById(id);
+      }
+      function asOnOff(v) {
+        return v ? 'ON' : 'OFF';
+      }
+      function logln(t) {
+        const l = byId('log');
+        l.textContent += t + '\n';
+        l.scrollTop = l.scrollHeight;
+      }
+
+      async function fetchStatus() {
+        const r = await fetch('/pir312/status', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }
+
+      function applyStatus(j) {
+        const ledOn = !!(j.common || j.box_left || j.box_left_center || j.box_right_center || j.box_right);
+        byId('led').textContent = asOnOff(ledOn);
+        byId('common').textContent = asOnOff(j.common);
+        byId('L').textContent = asOnOff(j.box_left);
+        byId('LC').textContent = asOnOff(j.box_left_center);
+        byId('RC').textContent = asOnOff(j.box_right_center);
+        byId('R').textContent = asOnOff(j.box_right);
+        const now = new Date();
+        byId('ts').textContent = now.toLocaleTimeString();
+      }
+
+      async function refreshOnce() {
+        try {
+          const j = await fetchStatus();
+          applyStatus(j);
+        } catch (e) {
+          logln('Error: ' + e);
+        }
+      }
+
+      document.addEventListener(
+        'DOMContentLoaded',
+        function () {
+          byId('refresh').addEventListener('click', refreshOnce, false);
+          refreshOnce();
+          setInterval(refreshOnce, 500); // periodic polling
+        },
+        false
+      );
+    </script>
+  </body>
+</html>

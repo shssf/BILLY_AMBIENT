@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ESP Inspector</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        margin: 16px;
+        max-width: 1100px;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 6px 8px;
+        vertical-align: top;
+      }
+      th {
+        background: #f4f4f4;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .mono {
+        font-family: ui-monospace, Consolas, monospace;
+      }
+      .btn {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: #222;
+        color: #fff;
+        text-decoration: none;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <a class="btn" href="/pir312">PIR312 trace</a>
+      <a class="btn" href="/pir312/status">JSON Status</a>
+      <a class="btn" href="/ota">OTA update</a>
+    </p>
+
+    <h1>ESP Inspector</h1>
+    <div id="err" style="color: #c00"></div>
+
+    <h2>Device & SoC</h2>
+    <table id="tbl-soc"></table>
+
+    <h2>RTOS</h2>
+    <table id="tbl-rtos"></table>
+
+    <h2>Flash partitions</h2>
+    <table id="tbl-part"></table>
+
+    <script>
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+
+      function esc(t) {
+        return (t ?? '-')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function row4(th1, td1, th2, td2) {
+        return `<tr><th>${esc(th1)}</th><td>${esc(td1)}</td><th>${esc(th2)}</th><td>${esc(td2)}</td></tr>`;
+      }
+      function row2(th, td) {
+        return `<tr><th>${esc(th)}</th><td colspan="3">${esc(td)}</td></tr>`;
+      }
+
+      async function load() {
+        try {
+          const r = await fetch('/api/inspect', { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const j = await r.json();
+
+          // SoC/Network
+          const soc = $('tbl-soc');
+          soc.innerHTML = [
+            row4('Target', j.soc.target, 'Model', j.soc.model),
+            row4('Cores', String(j.soc.cores), 'Revision', String(j.soc.revision)),
+            row4('Hostname', j.net.hostname, 'STA MAC', j.net.mac_sta),
+            row4('IP/GW/Mask', `${j.net.ip} / ${j.net.gw} / ${j.net.mask}`, 'DNS', `${j.net.dns1} / ${j.net.dns2}`),
+            row2(
+              'WiFi link',
+              `SSID: ${j.wifi.ssid}, RSSI: ${j.wifi.rssi} dBm, Channel: ${j.wifi.channel}, BSSID: ${j.wifi.bssid}`
+            ),
+            row2(
+              'WiFi radio',
+              `Proto: ${j.wifi.proto}, BW: ${j.wifi.bw}, MaxTx: ${j.wifi.max_tx_dbm} dBm, Country: ${j.wifi.country}`
+            ),
+            row4('Disconnect age', j.wifi.last_disc_age, 'Uptime', j.misc.uptime),
+            row2(
+              'Flash',
+              `Size: ${j.flash.size}, JEDEC: ${j.flash.jedec_hex}, Vendor: ${j.flash.vendor}, Mode: ${j.flash.mode}, Speed: ${j.flash.speed_hz} Hz`
+            ),
+            row2(
+              'Heap (8-bit)',
+              `Total: ${j.heap.total}, Free: ${j.heap.free}, MinEverFree: ${j.heap.min_free}, Largest: ${j.heap.largest}`
+            ),
+            row2('Heap (caps)', `InternalFree: ${j.heap.internal_free}, SPIRAMFree: ${j.heap.spiram_free}`),
+            row2('PSRAM', `State: ${j.psram.state}, Size: ${j.psram.size}`),
+            row2('OTA', `Running: ${j.ota.running_size}, Next: ${j.ota.next_size}`),
+            row2(
+              'Security',
+              `Secure boot: ${j.sec.secure_boot}, Flash enc: ${j.sec.flash_enc}, JTAG disabled: ${j.sec.jtag_disabled}`
+            ),
+            row2('Build', `IDF: ${j.build.idf}, ${j.build.date} ${j.build.time}`),
+            row2('Reset', `${j.misc.reset_reason} (${j.misc.reset_code})`),
+          ].join('');
+
+          // RTOS tasks (простая таблица)
+          const rtos = $('tbl-rtos');
+          rtos.innerHTML =
+            `<tr><th>Task</th><th>Prio</th><th>State</th><th>Stack free min</th></tr>` +
+            j.rtos.tasks
+              .map(
+                (t) =>
+                  `<tr><td class="mono">${esc(t.name)}</td><td>${t.prio}</td><td>${esc(t.state)}</td><td>${esc(t.stack_min)}</td></tr>`
+              )
+              .join('');
+
+          // Partitions
+          const part = $('tbl-part');
+          part.innerHTML =
+            `<tr><th>Label</th><th>Type</th><th>Subtype</th><th>Addr</th><th>Size</th></tr>` +
+            j.partitions
+              .map(
+                (p) =>
+                  `<tr><td class="mono">${esc(p.label)}</td><td>${p.type}</td><td>${p.subtype}</td><td class="mono">${esc(p.addr)}</td><td>${esc(p.size)}</td></tr>`
+              )
+              .join('');
+        } catch (e) {
+          $('err').textContent = 'Load failed: ' + e;
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', load, false);
+    </script>
+  </body>
+</html>
