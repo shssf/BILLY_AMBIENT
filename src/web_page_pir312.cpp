@@ -23,16 +23,16 @@ static void pir312_status_api()
 
   len += snprintf(buf + len,
                   sizeof(buf) - len,
-                  ",\"ambient\":%u"
-                  ",\"box_left\":%u"
-                  ",\"box_left_center\":%u"
-                  ",\"box_right_center\":%u"
-                  ",\"box_right\":%u",
-                  (unsigned)pir312_get_ambient(),
-                  (unsigned)pir312_get_box_left(),
-                  (unsigned)pir312_get_box_left_center(),
-                  (unsigned)pir312_get_box_right_center(),
-                  (unsigned)pir312_get_box_right());
+                  ",\"ambient\":%llu"
+                  ",\"box_left\":%llu"
+                  ",\"box_left_center\":%llu"
+                  ",\"box_right_center\":%llu"
+                  ",\"box_right\":%llu",
+                  pir312_get_ambient(),
+                  pir312_get_box_left(),
+                  pir312_get_box_left_center(),
+                  pir312_get_box_right_center(),
+                  pir312_get_box_right());
 
   len += snprintf(buf + len, sizeof(buf) - len, "}");
 

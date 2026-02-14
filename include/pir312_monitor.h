@@ -14,11 +14,11 @@ void pir312_dump_status();
 #endif
 
 /* Flag getters used by other modules (C ABI) */
-uint8_t pir312_get_ambient(void);
-uint8_t pir312_get_box_left(void);
-uint8_t pir312_get_box_left_center(void);
-uint8_t pir312_get_box_right_center(void);
-uint8_t pir312_get_box_right(void);
+uint64_t pir312_get_ambient(void);
+uint64_t pir312_get_box_left(void);
+uint64_t pir312_get_box_left_center(void);
+uint64_t pir312_get_box_right_center(void);
+uint64_t pir312_get_box_right(void);
 
 int pir312_get_state(int index);
 int pir312_count(void);
