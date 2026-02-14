@@ -3,93 +3,44 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PIR312</title>
-    <style>
-      body {
-        font-family:
-          system-ui,
-          Segoe UI,
-          Arial,
-          sans-serif;
-        margin: 16px;
-        max-width: 720px;
-      }
-
-      pre {
-        background: #111;
-        color: #eee;
-        padding: 10px;
-        border-radius: 8px;
-        white-space: pre-wrap;
-        min-height: 1.4em;
-      }
-
-      .row {
-        margin: 8px 0;
-      }
-
-      .mono {
-        font-family: ui-monospace, Consolas, monospace;
-      }
-
-      .weak {
-        color: #888;
-      }
-
-      .ok {
-        color: #19b300;
-      }
-
-      .bad {
-        color: #ff5a36;
-      }
-
-      button {
-        padding: 0.6rem 1rem;
-        margin-top: 8px;
-      }
-    </style>
+    <title>PIR AM312 and ADC light sensor data</title>
+    <link rel="stylesheet" href="/style.css" />
   </head>
-
   <body>
-    <h1>PIR312</h1>
+    <div class="topbar">
+      <a class="btn" href="/">Home</a>
+      <a class="btn" href="/pir312/status">JSON</a>
+    </div>
+
+    <h1>PIR AM312 and ADC light sensor data</h1>
 
     <div class="row mono">
-      LED:
-      <span id="led">-</span>
+      sensors:
+      <span id="sensors_raw">-</span>
     </div>
+
     <div class="row mono">
-      PIR common:
-      <span id="common">-</span>
+      light_raw:
+      <span id="light_raw">-</span>
     </div>
+
     <div class="row mono">
-      Boxes: L=
-      <span id="L">-</span>
-      , LC=
-      <span id="LC">-</span>
-      , RC=
-      <span id="RC">-</span>
-      , R=
-      <span id="R">-</span>
+      light:
+      <span id="light">-</span>
     </div>
 
     <div class="row weak mono">
       Last update:
       <span id="ts">-</span>
     </div>
-    <div class="row">
-      <button id="refresh" type="button">Refresh now</button>
-    </div>
 
     <pre id="log"></pre>
 
     <script>
       'use strict';
+
       function byId(id) {
         return document.getElementById(id);
-      }
-      function asOnOff(v) {
-        return v ? 'ON' : 'OFF';
       }
       function logln(t) {
         const l = byId('log');
@@ -104,15 +55,11 @@
       }
 
       function applyStatus(j) {
-        const ledOn = !!(j.common || j.box_left || j.box_left_center || j.box_right_center || j.box_right);
-        byId('led').textContent = asOnOff(ledOn);
-        byId('common').textContent = asOnOff(j.common);
-        byId('L').textContent = asOnOff(j.box_left);
-        byId('LC').textContent = asOnOff(j.box_left_center);
-        byId('RC').textContent = asOnOff(j.box_right_center);
-        byId('R').textContent = asOnOff(j.box_right);
-        const now = new Date();
-        byId('ts').textContent = now.toLocaleTimeString();
+        const sensors = Array.isArray(j.sensors) ? j.sensors : [];
+        byId('sensors_raw').textContent = '[' + sensors.join(',') + ']';
+        byId('light_raw').textContent = j.light_raw != null ? String(j.light_raw) : '-';
+        byId('light').textContent = j.light != null ? String(j.light) : '-';
+        byId('ts').textContent = new Date().toLocaleTimeString();
       }
 
       async function refreshOnce() {
@@ -124,15 +71,10 @@
         }
       }
 
-      document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-          byId('refresh').addEventListener('click', refreshOnce, false);
-          refreshOnce();
-          setInterval(refreshOnce, 500); // periodic polling
-        },
-        false
-      );
+      document.addEventListener('DOMContentLoaded', function () {
+        refreshOnce();
+        setInterval(refreshOnce, 500);
+      });
     </script>
   </body>
 </html>

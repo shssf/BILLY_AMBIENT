@@ -8,4 +8,6 @@ idf_component_register(
     EMBED_TXTFILES
         "${CMAKE_SOURCE_DIR}/data/ota_page.html"
         "${CMAKE_SOURCE_DIR}/data/pir312_page.html"
+        "${CMAKE_SOURCE_DIR}/data/main_page.html"
+        "${CMAKE_SOURCE_DIR}/data/style.css"
 )

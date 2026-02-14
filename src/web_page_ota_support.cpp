@@ -12,9 +12,6 @@
 
 static const char* TAG = "ota_support";
 
-extern const uint8_t html_start[] asm("_binary_ota_page_html_start");
-extern const uint8_t html_end[] asm("_binary_ota_page_html_end");
-
 static void reboot_task(void* arg)
 {
   vTaskDelay(pdMS_TO_TICKS(1000));
@@ -23,8 +20,11 @@ static void reboot_task(void* arg)
 
 static void h_get_ota_page(void)
 {
-  const size_t size = html_end - html_start;
-  web_send_binary(200, "text/html; charset=utf-8", reinterpret_cast<const char*>(html_start), size);
+  extern const uint8_t html_ota_start[] asm("_binary_ota_page_html_start");
+  extern const uint8_t html_ota_end[] asm("_binary_ota_page_html_end");
+
+  const size_t size = html_ota_end - html_ota_start;
+  web_send_binary(200, "text/html; charset=utf-8", reinterpret_cast<const char*>(html_ota_start), size);
 }
 
 static void h_post_update(void)

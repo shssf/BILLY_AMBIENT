@@ -25,12 +25,7 @@ static const gpio_num_t pir_pins[PIR_COUNT] = {
     GPIO_NUM_17,
 };
 
-static volatile int pir_state[PIR_COUNT];
-static volatile uint64_t ambient = 0;
-static volatile uint64_t box_left = 0;
-static volatile uint64_t box_left_center = 0;
-static volatile uint64_t box_right_center = 0;
-static volatile uint64_t box_right = 0;
+static volatile uint64_t pir_state[PIR_COUNT];
 
 int pir312_count(void)
 {
@@ -41,29 +36,11 @@ static void IRAM_ATTR pir_isr(void* arg)
 {
   const int index = (int)arg;
   const int level = gpio_get_level(pir_pins[index]);
-  pir_state[index] = level;
   uint64_t cur_time = esp_timer_get_time();
 
   if (level > 0)
   {
-    ambient = cur_time;
-
-    if (index == 1)
-    {
-      box_left = cur_time;
-    }
-    if (index == 2)
-    {
-      box_left_center = cur_time;
-    }
-    if (index == 3)
-    {
-      box_right_center = cur_time;
-    }
-    if (index == 4)
-    {
-      box_right = cur_time;
-    }
+    pir_state[index] = cur_time;
   }
 }
 
@@ -86,49 +63,29 @@ extern "C" void pir312_init(void)
   ESP_LOGI(TAG, "pir312_init done.");
 }
 
-int pir312_get_state(int index)
+bool pir312_get_state(int index)
 {
-  return (index < pir312_count()) ? pir_state[index] : 0;
-}
+  bool result = false;
 
-uint64_t pir312_get_ambient(void)
-{
-  return ((esp_timer_get_time() - ambient) < TIMEOUT_US) ? 1 : 0;
-}
+  if (index < pir312_count())
+  {
+    if ((esp_timer_get_time() - pir_state[index]) < TIMEOUT_US)
+    {
+      result = true;
+    }
+  }
 
-uint64_t pir312_get_box_left(void)
-{
-  return ((esp_timer_get_time() - box_left) < TIMEOUT_US) ? 1 : 0;
-}
-
-uint64_t pir312_get_box_left_center(void)
-{
-  return ((esp_timer_get_time() - box_left_center) < TIMEOUT_US) ? 1 : 0;
-}
-
-uint64_t pir312_get_box_right_center(void)
-{
-  return ((esp_timer_get_time() - box_right_center) < TIMEOUT_US) ? 1 : 0;
-}
-
-uint64_t pir312_get_box_right(void)
-{
-  return ((esp_timer_get_time() - box_right) < TIMEOUT_US) ? 1 : 0;
+  return result;
 }
 
 extern "C" void pir312_dump_status()
 {
   ESP_LOGI(TAG,
-           "[%d,%d,%d,%d,%d,%d], ambient=%llu, boxes: L=%llu, LC=%llu, RC=%llu, R=%llu",
+           "[%d,%d,%d,%d,%d,%d]",
            pir312_get_state(0),
            pir312_get_state(1),
            pir312_get_state(2),
            pir312_get_state(3),
            pir312_get_state(4),
-           pir312_get_state(5),
-           pir312_get_ambient(),
-           pir312_get_box_left(),
-           pir312_get_box_left_center(),
-           pir312_get_box_right_center(),
-           pir312_get_box_right());
+           pir312_get_state(5));
 }

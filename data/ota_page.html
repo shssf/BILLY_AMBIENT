@@ -3,51 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OTA Update</title>
-    <style>
-      body {
-        font-family:
-          system-ui,
-          Segoe UI,
-          Arial,
-          sans-serif;
-        margin: 16px;
-        max-width: 720px;
-      }
-
-      button {
-        padding: 0.6rem 1rem;
-        margin-top: 8px;
-      }
-
-      #bar {
-        height: 12px;
-        background: #111;
-        border-radius: 8px;
-        overflow: hidden;
-        margin-top: 12px;
-      }
-
-      #bar > div {
-        height: 100%;
-        width: 0;
-        background: #2f74ff;
-        transition: width 0.1s linear;
-      }
-
-      pre {
-        background: #111;
-        color: #eee;
-        padding: 10px;
-        border-radius: 8px;
-        white-space: pre-wrap;
-        min-height: 1.4em;
-      }
-    </style>
+    <title>Firmware update</title>
+    <link rel="stylesheet" href="/style.css" />
   </head>
 
   <body>
-    <h1>OTA Update</h1>
+    <div class="topbar">
+      <a class="btn" href="/">Home</a>
+    </div>
+    <h1>Firmware upload</h1>
     <p>Select a .bin firmware file and press Upload.</p>
     <input id="f" type="file" accept=".bin,application/octet-stream" />
     <br />

@@ -3,91 +3,38 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ESP Inspector</title>
-    <style>
-      body {
-        font-family:
-          system-ui,
-          Segoe UI,
-          Arial,
-          sans-serif;
-        margin: 16px;
-        max-width: 1100px;
-      }
-      table {
-        border-collapse: collapse;
-        width: 100%;
-      }
-      th,
-      td {
-        border: 1px solid #ccc;
-        padding: 6px 8px;
-        vertical-align: top;
-      }
-      th {
-        background: #f4f4f4;
-        text-align: left;
-        white-space: nowrap;
-      }
-      .mono {
-        font-family: ui-monospace, Consolas, monospace;
-      }
-      .btn {
-        display: inline-block;
-        padding: 8px 12px;
-        border-radius: 10px;
-        background: #222;
-        color: #fff;
-        text-decoration: none;
-        margin-right: 8px;
-      }
-    </style>
+    <title>Billy ambient lighting project home page</title>
+    <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
     <p>
-      <a class="btn" href="/pir312">PIR312 trace</a>
-      <a class="btn" href="/pir312/status">JSON Status</a>
-      <a class="btn" href="/ota">OTA update</a>
+      <a class="btn" href="/pir312">Sensors status</a>
+      <a class="btn" href="/hw_details">JSON</a>
+      <a class="btn" href="/ota">Firmware update</a>
     </p>
-
-    <h1>ESP Inspector</h1>
+    <h1>FireBeetle ESP-WROOM-32 V4.0</h1>
     <div id="err" style="color: #c00"></div>
-
     <h2>Device & SoC</h2>
     <table id="tbl-soc"></table>
-
     <h2>RTOS</h2>
     <table id="tbl-rtos"></table>
-
     <h2>Flash partitions</h2>
     <table id="tbl-part"></table>
-
     <script>
       'use strict';
       const $ = (id) => document.getElementById(id);
-
-      function esc(t) {
-        return (t ?? '-')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
-
+      // Simple row builders (no client-side escaping; JSON must be safe)
       function row4(th1, td1, th2, td2) {
-        return `<tr><th>${esc(th1)}</th><td>${esc(td1)}</td><th>${esc(th2)}</th><td>${esc(td2)}</td></tr>`;
+        return `<tr><th>${th1}</th><td>${td1}</td><th>${th2}</th><td>${td2}</td></tr>`;
       }
       function row2(th, td) {
-        return `<tr><th>${esc(th)}</th><td colspan="3">${esc(td)}</td></tr>`;
+        return `<tr><th>${th}</th><td colspan="3">${td}</td></tr>`;
       }
-
       async function load() {
         try {
-          const r = await fetch('/api/inspect', { cache: 'no-store' });
+          const r = await fetch('/hw_details', { cache: 'no-store' });
           if (!r.ok) throw new Error('HTTP ' + r.status);
           const j = await r.json();
-
           // SoC/Network
           const soc = $('tbl-soc');
           soc.innerHTML = [
@@ -122,18 +69,16 @@
             row2('Build', `IDF: ${j.build.idf}, ${j.build.date} ${j.build.time}`),
             row2('Reset', `${j.misc.reset_reason} (${j.misc.reset_code})`),
           ].join('');
-
-          // RTOS tasks (простая таблица)
+          // RTOS tasks
           const rtos = $('tbl-rtos');
           rtos.innerHTML =
             `<tr><th>Task</th><th>Prio</th><th>State</th><th>Stack free min</th></tr>` +
             j.rtos.tasks
               .map(
                 (t) =>
-                  `<tr><td class="mono">${esc(t.name)}</td><td>${t.prio}</td><td>${esc(t.state)}</td><td>${esc(t.stack_min)}</td></tr>`
+                  `<tr><td class="mono">${t.name}</td><td>${t.prio}</td><td>${t.state}</td><td>${t.stack_min}</td></tr>`
               )
               .join('');
-
           // Partitions
           const part = $('tbl-part');
           part.innerHTML =
@@ -141,14 +86,13 @@
             j.partitions
               .map(
                 (p) =>
-                  `<tr><td class="mono">${esc(p.label)}</td><td>${p.type}</td><td>${p.subtype}</td><td class="mono">${esc(p.addr)}</td><td>${esc(p.size)}</td></tr>`
+                  `<tr><td class="mono">${p.label}</td><td>${p.type}</td><td>${p.subtype}</td><td class="mono">${p.addr}</td><td>${p.size}</td></tr>`
               )
               .join('');
         } catch (e) {
           $('err').textContent = 'Load failed: ' + e;
         }
       }
-
       document.addEventListener('DOMContentLoaded', load, false);
     </script>
   </body>

@@ -63,6 +63,11 @@ bool light_sensor_is_light()
     return raw < light_threshold;
 }
 
+int light_sensor_get_value()
+{
+    return read_sensor();
+}
+
 extern "C" void light_sensor_dump(void)
 {
   const int avg = read_sensor();

@@ -15,72 +15,38 @@
 
 static const char* TAG = "WS2812B";
 
-#define LED_PIN         GPIO_NUM_13
-#define LED_COUNT       28
-#define LIGHT_THRESHOLD 500
-
-#define SEG_LEFT_START         0
-#define SEG_LEFT_END           6
-#define SEG_LEFT_CENTER_START  7
-#define SEG_LEFT_CENTER_END    13
-#define SEG_RIGHT_CENTER_START 14
-#define SEG_RIGHT_CENTER_END   20
-#define SEG_RIGHT_START        21
-#define SEG_RIGHT_END          27
+#define LED_PIN    GPIO_NUM_13
+#define LED_COUNT  28
+#define SEG_COUNT  4
+#define SEG_LENGTH 7
 
 static led_strip_handle_t s_strip = NULL;
 
-static void set_pixel_rgb(uint32_t idx, uint32_t r, uint32_t g, uint32_t b)
-{
-  if (idx >= LED_COUNT || !s_strip)
-  {
-    return;
-  }
-  CHECK_ERR(led_strip_set_pixel(s_strip, idx, r, g, b));
-}
-
 static void ws2812b_led_task(void* arg)
 {
-  const uint32_t low_b = 25;
+  const uint32_t ambient = 25;
   const uint32_t high_b = 255;
 
   for (;;)
   {
     if (s_strip)
     {
-      uint64_t a1 = pir312_get_ambient();
-      uint64_t a2 = pir312_get_box_left();
-      uint64_t a3 = pir312_get_box_left_center();
-      uint64_t a4 = pir312_get_box_right_center();
-      uint64_t a5 = pir312_get_box_right();
       CHECK_ERR(led_strip_clear(s_strip));
-      if (a1 || a2 || a3 || a4 || a5)
+      if (pir312_get_state(0) || pir312_get_state(5))
       {
-        if (a1)
-        {
-          for (int i = 0; i < LED_COUNT; ++i)
-            set_pixel_rgb(i, low_b, low_b, low_b);
-        }
+        for (int i = 0; i < LED_COUNT; ++i)
+          CHECK_ERR(led_strip_set_pixel(s_strip, i, ambient, ambient, ambient));
+      }
 
-        if (a2)
+      for (int k = 0; k < 4; ++k)
+      {
+        if (pir312_get_state(k + 1))
         {
-          for (int i = SEG_LEFT_START; i <= SEG_LEFT_END; ++i)
-            set_pixel_rgb(i, high_b, high_b, 0);
-        }
-        if (a3)
-        {
-          for (int i = SEG_LEFT_CENTER_START; i <= SEG_LEFT_CENTER_END; ++i)
-            set_pixel_rgb(i, high_b, 0, high_b);
-        }
-        if (a4)
-        {
-          for (int i = SEG_RIGHT_CENTER_START; i <= SEG_RIGHT_CENTER_END; ++i)
-            set_pixel_rgb(i, 0, 0, high_b);
-        }
-        if (a5)
-        {
-          for (int i = SEG_RIGHT_START; i <= SEG_RIGHT_END; ++i)
-            set_pixel_rgb(i, high_b, 0, 0);
+          int offset = (k * SEG_LENGTH);
+          for (int i = 0; i < SEG_LENGTH; ++i)
+          {
+            CHECK_ERR(led_strip_set_pixel(s_strip, offset + i, 0, high_b, 0));
+          }
         }
       }
       CHECK_ERR(led_strip_refresh(s_strip));

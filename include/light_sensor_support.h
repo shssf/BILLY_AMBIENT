@@ -13,5 +13,6 @@ void light_sensor_dump(void);
 #endif
 
 bool light_sensor_is_light();
+int light_sensor_get_value();
 
 #endif // LIGHT_SENSOR_SUPPORT_H 
