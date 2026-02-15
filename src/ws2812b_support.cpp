@@ -48,6 +48,10 @@ static void ws2812b_led_task(void* arg)
         for (int i = 0; i < LED_COUNT; ++i)
           CHECK_ERR(led_strip_set_pixel(s_strip, i, 50, 0, 10));
       }
+      else
+      {
+        CHECK_ERR(led_strip_clear(s_strip));
+      }
 
       if (s2)
       {
