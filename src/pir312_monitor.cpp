@@ -48,8 +48,13 @@ extern "C" void pir312_init(void)
 {
   CHECK_ERR(gpio_install_isr_service(0));
 
+  uint64_t cur_time = esp_timer_get_time();
   for (int i = 0; i < pir312_count(); ++i)
   {
+    // init
+    pir_state[i] = cur_time;
+
+    //create handlers
     gpio_config_t cfg = {};
     cfg.pin_bit_mask = 1ULL << pir_pins[i];
     cfg.mode = GPIO_MODE_INPUT;

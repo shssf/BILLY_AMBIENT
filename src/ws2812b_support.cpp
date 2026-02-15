@@ -16,16 +16,22 @@
 static const char* TAG = "WS2812B";
 
 #define LED_PIN    GPIO_NUM_13
-#define LED_COUNT  28
+#define LED_COUNT  84
 #define SEG_COUNT  4
-#define SEG_LENGTH 7
+#define SEG_LENGTH 21
 
 static led_strip_handle_t s_strip = NULL;
 
 static void ws2812b_led_task(void* arg)
 {
   // color composer https://www.figma.com/color-wheel/
-  // ambient RGB: 155,62,254
+  // ambient RGB: 50, 0, 10
+
+  if (s_strip)
+  {
+    CHECK_ERR(led_strip_clear(s_strip));
+  }
+
   for (;;)
   {
     if (s_strip)
@@ -37,44 +43,43 @@ static void ws2812b_led_task(void* arg)
       bool s5 = pir312_get_state(4); // right-right closet
       bool s6 = pir312_get_state(5); // right-rigth guard sensor
 
-      CHECK_ERR(led_strip_clear(s_strip));
       if (s1 || s2 || s3 || s4 || s5 || s6)
       {
         for (int i = 0; i < LED_COUNT; ++i)
-          CHECK_ERR(led_strip_set_pixel(s_strip, i, 155, 62, 254));
+          CHECK_ERR(led_strip_set_pixel(s_strip, i, 50, 0, 10));
       }
 
       if (s2)
       {
         for (int i = 0; i < SEG_LENGTH; ++i)
         {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 255, 0, 0));
+          CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 160, 0, 35));
         }
       }
       if (s3)
       {
         for (int i = 0; i < SEG_LENGTH; ++i)
         {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 0, 255, 0));
+          CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 140, 0, 70));
         }
       }
       if (s4)
       {
         for (int i = 0; i < SEG_LENGTH; ++i)
         {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 0, 0, 255));
+          CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 180, 0, 30));
         }
       }
       if (s5)
       {
         for (int i = 0; i < SEG_LENGTH; ++i)
         {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (3 * SEG_LENGTH) + i, 255, 255, 0));
+          CHECK_ERR(led_strip_set_pixel(s_strip, (3 * SEG_LENGTH) + i, 150, 0, 50));
         }
       }
       CHECK_ERR(led_strip_refresh(s_strip));
     }
-    vTaskDelay(pdMS_TO_TICKS(1000)); // 1 sec
+    vTaskDelay(pdMS_TO_TICKS(500)); // 0.5 sec
   }
 }
 
