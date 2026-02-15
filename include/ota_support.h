@@ -1,3 +1,3 @@
 #pragma once
 
-void ota_on_started();
+void ota_register_web_route_handlers();

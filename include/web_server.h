@@ -16,7 +16,7 @@ bool web_is_running(void);
 
 typedef void (*http_handler_fn)(void);
 
-void web_on_started(void);
+void main_register_web_route_handlers(void);
 void web_register_get(const char* uri, http_handler_fn handler);
 void web_register_post(const char* uri, http_handler_fn handler);
 void web_send(int code, const char* content_type, const char* body);

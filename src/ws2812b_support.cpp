@@ -24,29 +24,52 @@ static led_strip_handle_t s_strip = NULL;
 
 static void ws2812b_led_task(void* arg)
 {
-  const uint32_t ambient = 25;
-  const uint32_t high_b = 255;
-
+  // color composer https://www.figma.com/color-wheel/
+  // ambient RGB: 155,62,254
   for (;;)
   {
     if (s_strip)
     {
+      bool s1 = pir312_get_state(0); // left-left guard sensor
+      bool s2 = pir312_get_state(1); // left-left closet
+      bool s3 = pir312_get_state(2); // left-center closet
+      bool s4 = pir312_get_state(3); // right-center closet
+      bool s5 = pir312_get_state(4); // right-right closet
+      bool s6 = pir312_get_state(5); // right-rigth guard sensor
+
       CHECK_ERR(led_strip_clear(s_strip));
-      if (pir312_get_state(0) || pir312_get_state(5))
+      if (s1 || s2 || s3 || s4 || s5 || s6)
       {
         for (int i = 0; i < LED_COUNT; ++i)
-          CHECK_ERR(led_strip_set_pixel(s_strip, i, ambient, ambient, ambient));
+          CHECK_ERR(led_strip_set_pixel(s_strip, i, 155, 62, 254));
       }
 
-      for (int k = 0; k < 4; ++k)
+      if (s2)
       {
-        if (pir312_get_state(k + 1))
+        for (int i = 0; i < SEG_LENGTH; ++i)
         {
-          int offset = (k * SEG_LENGTH);
-          for (int i = 0; i < SEG_LENGTH; ++i)
-          {
-            CHECK_ERR(led_strip_set_pixel(s_strip, offset + i, 0, high_b, 0));
-          }
+          CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 255, 0, 0));
+        }
+      }
+      if (s3)
+      {
+        for (int i = 0; i < SEG_LENGTH; ++i)
+        {
+          CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 0, 255, 0));
+        }
+      }
+      if (s4)
+      {
+        for (int i = 0; i < SEG_LENGTH; ++i)
+        {
+          CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 0, 0, 255));
+        }
+      }
+      if (s5)
+      {
+        for (int i = 0; i < SEG_LENGTH; ++i)
+        {
+          CHECK_ERR(led_strip_set_pixel(s_strip, (3 * SEG_LENGTH) + i, 255, 255, 0));
         }
       }
       CHECK_ERR(led_strip_refresh(s_strip));
@@ -73,7 +96,7 @@ void ws2812b_led_init()
   rmt_cfg.flags.with_dma = false;
 
   CHECK_ERR(led_strip_new_rmt_device(&strip_cfg, &rmt_cfg, &s_strip));
-  ESP_LOGI(TAG, "INIT: LED strip created on GPIO %d (%d px)", (int)LED_PIN, (int)LED_COUNT);
+  ESP_LOGI(TAG, "INIT: LED strip created on GPIO %d (%d px)", LED_PIN, LED_COUNT);
 
   CHECK_ERR(led_strip_clear(s_strip));
   CHECK_ERR(led_strip_refresh(s_strip));

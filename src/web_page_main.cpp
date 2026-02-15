@@ -684,7 +684,7 @@ static void handle_hw_details()
   web_send(200, "application/json; charset=utf-8", body.c_str());
 }
 
-void web_on_started()
+void main_register_web_route_handlers()
 {
   static bool s_registered = false;
   if (!s_registered)
@@ -699,6 +699,6 @@ void web_on_started()
   web_register_get("/favicon.ico", handle_favicon);
   web_register_get("/style.css", handle_style_css);
 
-  web_ui_pir312_on_started();
-  ota_on_started();
+  pir312_register_web_route_handlers();
+  ota_register_web_route_handlers();
 }

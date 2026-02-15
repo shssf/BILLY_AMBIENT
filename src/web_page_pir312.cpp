@@ -33,9 +33,8 @@ static void pir312_page()
   web_send_binary(200, "text/html; charset=utf-8", reinterpret_cast<const char*>(html_pir312_start), size);
 }
 
-void web_ui_pir312_on_started(void)
+void pir312_register_web_route_handlers()
 {
   web_register_get("/pir312", pir312_page);
-  //web_register_get("/pir312/", pir312_page);
   web_register_get("/pir312/status", pir312_status_api);
 }

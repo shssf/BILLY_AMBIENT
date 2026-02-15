@@ -66,7 +66,7 @@ extern "C" bool web_start()
     return false;
   }
 
-  web_on_started();
+  main_register_web_route_handlers();
 
   ESP_LOGI(TAG, "HTTP server started on port %d", cfg.server_port);
   return true;

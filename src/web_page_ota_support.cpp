@@ -124,7 +124,7 @@ static void h_post_update(void)
   CHECK_XTASK_OK(xTaskCreate(reboot_task, "ota_reboot", 2048, NULL, 5, NULL)); // <-- now checked
 }
 
-void ota_on_started(void)
+void ota_register_web_route_handlers(void)
 {
   web_register_get("/ota", h_get_ota_page);
   web_register_post("/update", h_post_update);

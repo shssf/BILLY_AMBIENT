@@ -16,4 +16,4 @@ void pir312_dump_status();
 bool pir312_get_state(int index);
 int pir312_count();
 
-void web_ui_pir312_on_started();
+void pir312_register_web_route_handlers();
