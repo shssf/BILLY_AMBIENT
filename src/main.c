@@ -16,6 +16,20 @@
 static const char* TAG = "main";
 static bool s_services_started = false;
 
+#if CONFIG_BT_ENABLED
+extern "C" void btStop(void);
+static void stop_bt_if_present()
+{
+  btStop();
+  ESP_LOGI(TAG, "BlueTooth stopped via API");
+}
+#else
+static void stop_bt_if_present()
+{
+  ESP_LOGI(TAG, "BlueTooth not available");
+}
+#endif
+
 static void async_wifi_handler(void* arg, esp_event_base_t base, int32_t id, void* data)
 {
   if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP && !s_services_started)
@@ -53,6 +67,7 @@ void app_main(void)
   light_sensor_init();
   ws2812b_led_init();
   wifi_start();
+  stop_bt_if_present();
 
   CHECK_ERR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &async_wifi_handler, NULL));
   ESP_LOGI(TAG, "INIT: Event handlers done");

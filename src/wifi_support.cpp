@@ -117,6 +117,7 @@ bool wifi_start(void)
   }
   CHECK_ERR(esp_wifi_set_mode(WIFI_MODE_STA));
   CHECK_ERR(esp_wifi_start());
+  CHECK_ERR(esp_wifi_set_ps(WIFI_PS_NONE)); // power save off
 
   ESP_LOGI(TAG, "Initialization done.");
   return true;

@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "light_sensor_support.h"
 #include "pir312_monitor.h"
 #include "utils.h"
 #include "ws2812b_support.h"
@@ -36,54 +37,61 @@ static void ws2812b_led_task(void* arg)
   {
     if (s_strip)
     {
-      bool s1 = pir312_get_state(0); // left-left guard sensor
-      bool s2 = pir312_get_state(1); // left-left closet
-      bool s3 = pir312_get_state(2); // left-center closet
-      bool s4 = pir312_get_state(3); // right-center closet
-      bool s5 = pir312_get_state(4); // right-right closet
-      bool s6 = pir312_get_state(5); // right-rigth guard sensor
-
-      if (s1 || s2 || s3 || s4 || s5 || s6)
+      if (!light_sensor_is_light())
       {
-        for (int i = 0; i < LED_COUNT; ++i)
-          CHECK_ERR(led_strip_set_pixel(s_strip, i, 50, 0, 10));
+        bool s1 = pir312_get_state(0); // left-left guard sensor
+        bool s2 = pir312_get_state(1); // left-left closet
+        bool s3 = pir312_get_state(2); // left-center closet
+        bool s4 = pir312_get_state(3); // right-center closet
+        bool s5 = pir312_get_state(4); // right-right closet
+        bool s6 = pir312_get_state(5); // right-rigth guard sensor
+
+        if (s1 || s2 || s3 || s4 || s5 || s6)
+        {
+          for (int i = 0; i < LED_COUNT; ++i)
+            CHECK_ERR(led_strip_set_pixel(s_strip, i, 50, 0, 10));
+        }
+        else
+        {
+          CHECK_ERR(led_strip_clear(s_strip));
+        }
+
+        if (s2)
+        {
+          for (int i = 0; i < SEG_LENGTH; ++i)
+          {
+            CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 160, 0, 35));
+          }
+        }
+        if (s3)
+        {
+          for (int i = 0; i < SEG_LENGTH; ++i)
+          {
+            CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 140, 0, 70));
+          }
+        }
+        if (s4)
+        {
+          for (int i = 0; i < SEG_LENGTH; ++i)
+          {
+            CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 128, 0, 130));
+          }
+        }
+        if (s5)
+        {
+          for (int i = 0; i < SEG_LENGTH; ++i)
+          {
+            CHECK_ERR(led_strip_set_pixel(s_strip, (3 * SEG_LENGTH) + i, 150, 0, 255));
+          }
+        }
       }
       else
       {
         CHECK_ERR(led_strip_clear(s_strip));
       }
-
-      if (s2)
-      {
-        for (int i = 0; i < SEG_LENGTH; ++i)
-        {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 160, 0, 35));
-        }
-      }
-      if (s3)
-      {
-        for (int i = 0; i < SEG_LENGTH; ++i)
-        {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 140, 0, 70));
-        }
-      }
-      if (s4)
-      {
-        for (int i = 0; i < SEG_LENGTH; ++i)
-        {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 180, 0, 30));
-        }
-      }
-      if (s5)
-      {
-        for (int i = 0; i < SEG_LENGTH; ++i)
-        {
-          CHECK_ERR(led_strip_set_pixel(s_strip, (3 * SEG_LENGTH) + i, 150, 0, 50));
-        }
-      }
       CHECK_ERR(led_strip_refresh(s_strip));
     }
-    vTaskDelay(pdMS_TO_TICKS(500)); // 0.5 sec
+    vTaskDelay(pdMS_TO_TICKS(200)); // 0.2 sec
   }
 }
 
@@ -102,6 +110,7 @@ void ws2812b_led_init()
   rmt_cfg.resolution_hz = 10 * 1000 * 1000;
   rmt_cfg.mem_block_symbols = 64;
   rmt_cfg.flags = {};
+  //rmt_cfg.flags.with_dma = true;
   rmt_cfg.flags.with_dma = false;
 
   CHECK_ERR(led_strip_new_rmt_device(&strip_cfg, &rmt_cfg, &s_strip));
