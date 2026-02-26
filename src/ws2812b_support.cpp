@@ -60,21 +60,21 @@ static void ws2812b_led_task(void* arg)
         {
           for (int i = 0; i < SEG_LENGTH; ++i)
           {
-            CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 160, 0, 35));
+            CHECK_ERR(led_strip_set_pixel(s_strip, (0 * SEG_LENGTH) + i, 150, 0, 255));
           }
         }
         if (s3)
         {
           for (int i = 0; i < SEG_LENGTH; ++i)
           {
-            CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 140, 0, 70));
+            CHECK_ERR(led_strip_set_pixel(s_strip, (1 * SEG_LENGTH) + i, 150, 0, 255));
           }
         }
         if (s4)
         {
           for (int i = 0; i < SEG_LENGTH; ++i)
           {
-            CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 128, 0, 130));
+            CHECK_ERR(led_strip_set_pixel(s_strip, (2 * SEG_LENGTH) + i, 150, 0, 255));
           }
         }
         if (s5)

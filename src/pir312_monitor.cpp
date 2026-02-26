@@ -13,8 +13,9 @@
 
 static const char* TAG = "PIR AM312";
 
-#define PIR_COUNT  6
-#define TIMEOUT_US (10LL * 1000000LL) // 10sec // 5 min
+#define PIR_COUNT        6
+#define TIMEOUT_LARGE_US (30LL * 1000000LL) // 30sec
+#define TIMEOUT_SMALL_US (3LL * 1000000LL)  // 3sec
 
 static const gpio_num_t pir_pins[PIR_COUNT] = {
     GPIO_NUM_27,
@@ -71,10 +72,15 @@ extern "C" void pir312_init(void)
 bool pir312_get_state(int index)
 {
   bool result = false;
+  int64_t timer_off = TIMEOUT_LARGE_US;
+  if (index > 0 && index < 5)
+  {
+    timer_off = TIMEOUT_SMALL_US;
+  }
 
   if (index < pir312_count())
   {
-    if ((esp_timer_get_time() - pir_state[index]) < TIMEOUT_US)
+    if ((esp_timer_get_time() - pir_state[index]) < timer_off)
     {
       result = true;
     }
