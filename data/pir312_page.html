@@ -7,74 +7,84 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <div class="topbar">
-      <a class="btn" href="/">Home</a>
-      <a class="btn" href="/pir312/status">JSON</a>
-    </div>
+    <div class="container">
+      <h1>PIR AM312 and ADC light sensor data</h1>
 
-    <h1>PIR AM312 and ADC light sensor data</h1>
+      <div class="action-row">
+        <a class="btn btn-default" href="/">Back</a>
+        <a class="btn btn-default" href="/pir312/status">JSON</a>
+      </div>
 
-    <div class="row mono">
-      sensors:
-      <span id="sensors_raw">-</span>
-    </div>
+      <div class="sep"></div>
 
-    <div class="row mono">
-      light_raw:
-      <span id="light_raw">-</span>
-    </div>
+      <div class="columns">
+        <div class="card">
+          <div class="section-title">Status</div>
+          <table>
+            <tr>
+              <td>sensors</td>
+              <td id="sensors_raw" class="mono">-</td>
+            </tr>
+            <tr>
+              <td>light_raw</td>
+              <td id="light_raw" class="mono">-</td>
+            </tr>
+            <tr>
+              <td>light</td>
+              <td id="light" class="mono">-</td>
+            </tr>
+            <tr>
+              <td>Last update</td>
+              <td id="ts" class="mono">-</td>
+            </tr>
+          </table>
+        </div>
+        <div class="card">
+          <div class="section-title">Log</div>
+          <pre id="log" class="mono" style="white-space: pre-wrap; margin: 0; min-height: 1.4em"></pre>
+        </div>
+      </div>
 
-    <div class="row mono">
-      light:
-      <span id="light">-</span>
-    </div>
+      <script>
+        'use strict';
 
-    <div class="row weak mono">
-      Last update:
-      <span id="ts">-</span>
-    </div>
-
-    <pre id="log"></pre>
-
-    <script>
-      'use strict';
-
-      function byId(id) {
-        return document.getElementById(id);
-      }
-      function logln(t) {
-        const l = byId('log');
-        l.textContent += t + '\n';
-        l.scrollTop = l.scrollHeight;
-      }
-
-      async function fetchStatus() {
-        const r = await fetch('/pir312/status', { cache: 'no-store' });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
-      }
-
-      function applyStatus(j) {
-        const sensors = Array.isArray(j.sensors) ? j.sensors : [];
-        byId('sensors_raw').textContent = '[' + sensors.join(',') + ']';
-        byId('light_raw').textContent = j.light_raw != null ? String(j.light_raw) : '-';
-        byId('light').textContent = j.light != null ? String(j.light) : '-';
-        byId('ts').textContent = new Date().toLocaleTimeString();
-      }
-
-      async function refreshOnce() {
-        try {
-          const j = await fetchStatus();
-          applyStatus(j);
-        } catch (e) {
-          logln('Error: ' + e);
+        function byId(id) {
+          return document.getElementById(id);
         }
-      }
+        function logln(t) {
+          const l = byId('log');
+          l.textContent += t + '\n';
+          l.scrollTop = l.scrollHeight;
+        }
 
-      document.addEventListener('DOMContentLoaded', function () {
-        refreshOnce();
-        setInterval(refreshOnce, 500);
-      });
-    </script>
+        async function fetchStatus() {
+          const r = await fetch('/pir312/status', { cache: 'no-store' });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        }
+
+        function applyStatus(j) {
+          const sensors = Array.isArray(j.sensors) ? j.sensors : [];
+          byId('sensors_raw').textContent = '[' + sensors.join(',') + ']';
+          byId('light_raw').textContent = j.light_raw != null ? String(j.light_raw) : '-';
+          byId('light').textContent = j.light != null ? String(j.light) : '-';
+          byId('ts').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function refreshOnce() {
+          try {
+            const j = await fetchStatus();
+            applyStatus(j);
+          } catch (e) {
+            logln('Error: ' + e);
+          }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+          refreshOnce();
+          setInterval(refreshOnce, 500);
+        });
+      </script>
+    </div>
   </body>
 </html>

@@ -8,81 +8,211 @@
   </head>
 
   <body>
-    <div class="topbar">
-      <a class="btn" href="/">Home</a>
-    </div>
-    <h1>Firmware upload</h1>
-    <p>Select a .bin firmware file and press Upload.</p>
-    <input id="f" type="file" accept=".bin,application/octet-stream" />
-    <br />
-    <button id="u" type="button">Upload & Flash</button>
-    <div id="bar">
-      <div></div>
-    </div>
-    <pre id="log"></pre>
-    <script>
-      'use strict';
-      function byId(id) {
-        return document.getElementById(id);
-      }
-      function logln(t) {
-        const l = byId('log');
-        l.textContent += t + '\n';
-        l.scrollTop = l.scrollHeight;
-        console.log(t);
-      }
-      function setProg(p) {
-        const v = Math.max(0, Math.min(100, Math.floor(p)));
-        byId('bar').firstElementChild.style.width = v + '%';
-      }
-      document.addEventListener(
-        'DOMContentLoaded',
-        function () {
-          var btn = byId('u');
-          var file = byId('f');
-          setProg(0);
-          btn.addEventListener(
-            'click',
-            function () {
-              if (!file.files || file.files.length === 0) {
-                logln('Choose a .bin file first');
-                return;
-              }
-              var blob = file.files[0];
-              logln('Uploading ' + blob.name + ' (' + blob.size + ' bytes)');
-              setProg(0);
-              var xhr = new XMLHttpRequest();
-              xhr.open('POST', '/update', true);
-              xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-              xhr.upload.onprogress = function (e) {
-                if (e.lengthComputable) {
-                  setProg((e.loaded / e.total) * 100);
+    <div class="container">
+      <h1>Firmware upload</h1>
+
+      <div class="action-row">
+        <a class="btn btn-default" href="/">Back</a>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="card">
+        <div class="section-title">Upload</div>
+        <p class="hint">
+          Select a
+          <span class="mono">.bin</span>
+          firmware file and press Upload.
+        </p>
+        <input id="f" class="file-input" type="file" accept=".bin,application/octet-stream" />
+
+        <table id="tblFile" style="margin-top: 12px; display: none"></table>
+
+        <div class="action-row" style="margin-top: 12px">
+          <button id="u" class="btn btn-accent" type="button">Upload &amp; Flash</button>
+        </div>
+      </div>
+
+      <div class="card" id="progressCard" style="display: none">
+        <div class="progress-title">Upload progress</div>
+        <div class="progress-wrap">
+          <div id="bar" class="progress-bar"></div>
+        </div>
+        <div id="pct" class="mono">0%</div>
+        <div id="msg" class="hint">Ready</div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Log</div>
+        <pre id="log" class="mono" style="white-space: pre-wrap; margin: 0; min-height: 1.4em"></pre>
+      </div>
+      <script>
+        'use strict';
+        function byId(id) {
+          return document.getElementById(id);
+        }
+        function logln(t) {
+          const l = byId('log');
+          l.textContent += t + '\n';
+          l.scrollTop = l.scrollHeight;
+          console.log(t);
+        }
+        function fmtBytes(n) {
+          const v = Number(n);
+          if (!Number.isFinite(v) || v < 0) return '-';
+          if (v < 1024) return v + ' B';
+          const units = ['KiB', 'MiB', 'GiB'];
+          let x = v;
+          let u = -1;
+          while (x >= 1024 && u < units.length - 1) {
+            x /= 1024;
+            u++;
+          }
+          return x.toFixed(x >= 10 || u === units.length - 1 ? 1 : 2) + ' ' + units[u];
+        }
+        function showStatus(text) {
+          const progressCard = byId('progressCard');
+          const msg = byId('msg');
+          progressCard.style.display = 'block';
+          msg.textContent = text;
+        }
+        function setProg(p) {
+          const v = Math.max(0, Math.min(100, Math.floor(p)));
+          byId('bar').style.width = v + '%';
+          byId('pct').textContent = v + '%';
+        }
+
+        let otaNextMaxBytes = null;
+        async function loadOtaLimits() {
+          try {
+            const r = await fetch('/hw_details', { cache: 'no-store' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const j = await r.json();
+            const next = j && j.ota ? Number(j.ota.next_size) : NaN;
+            otaNextMaxBytes = Number.isFinite(next) && next > 0 ? next : null;
+          } catch (e) {
+            otaNextMaxBytes = null;
+            logln('Warning: cannot read OTA slot size from /hw_details (' + e + '). Size check will be skipped.');
+          }
+        }
+
+        function fileDetailsTableRows(blob) {
+          const name = blob && blob.name ? String(blob.name) : '-';
+          const size = blob && Number.isFinite(blob.size) ? blob.size : null;
+          const type = blob && blob.type ? String(blob.type) : '-';
+          const lm = blob && Number.isFinite(blob.lastModified) ? new Date(blob.lastModified).toLocaleString() : '-';
+          const max = otaNextMaxBytes != null ? otaNextMaxBytes : null;
+
+          function kv(k, v) {
+            return `<tr><th>${k}</th><td class="mono">${v}</td></tr>`;
+          }
+
+          return [
+            kv('Name', name),
+            kv('Size', size != null ? `${size} B (${fmtBytes(size)})` : '-'),
+            kv('Last modified', lm),
+            kv('MIME', type),
+            kv('Max (OTA Next)', max != null ? `${max} B (${fmtBytes(max)})` : 'unknown'),
+          ].join('');
+        }
+
+        function updateFileDetails() {
+          const file = byId('f');
+          const tbl = byId('tblFile');
+          const blob = file && file.files && file.files.length ? file.files[0] : null;
+          if (!blob) {
+            tbl.style.display = 'none';
+            tbl.innerHTML = '';
+            return;
+          }
+          tbl.innerHTML = fileDetailsTableRows(blob);
+          tbl.style.display = 'table';
+        }
+
+        function validateSelectedFile(blob) {
+          if (!blob) return 'Choose a .bin file first';
+          const name = blob.name ? String(blob.name) : '';
+          if (!name.toLowerCase().endsWith('.bin')) return 'Invalid file: only .bin firmware is allowed';
+          if (otaNextMaxBytes != null && blob.size > otaNextMaxBytes) {
+            return `File too large: ${blob.size} B > OTA Next ${otaNextMaxBytes} B`;
+          }
+          return null;
+        }
+
+        document.addEventListener(
+          'DOMContentLoaded',
+          function () {
+            var btn = byId('u');
+            var file = byId('f');
+            var progressCard = byId('progressCard');
+            var msg = byId('msg');
+            setProg(0);
+
+            loadOtaLimits().then(updateFileDetails);
+            file.addEventListener('change', updateFileDetails, false);
+
+            btn.addEventListener(
+              'click',
+              function () {
+                if (!file.files || file.files.length === 0) {
+                  const err = 'Choose a .bin file first';
+                  logln(err);
+                  showStatus(err);
+                  return;
                 }
-              };
-              xhr.onload = function () {
-                logln('HTTP ' + xhr.status);
-                logln(xhr.responseText || '');
-                if (xhr.status === 200) {
-                  setProg(100);
+                var blob = file.files[0];
+
+                const vErr = validateSelectedFile(blob);
+                if (vErr) {
+                  logln('Error: ' + vErr);
+                  setProg(0);
+                  showStatus(vErr);
+                  return;
                 }
-              };
-              xhr.onerror = function () {
-                logln('Network error');
-              };
-              xhr.ontimeout = function () {
-                logln('Timeout');
-              };
-              try {
-                xhr.send(blob);
-              } catch (e) {
-                logln('Send failed: ' + e);
-              }
-            },
-            false
-          );
-        },
-        false
-      );
-    </script>
+
+                logln('Uploading ' + blob.name + ' (' + blob.size + ' bytes)');
+                setProg(0);
+                progressCard.style.display = 'block';
+                msg.textContent = 'Uploading ' + blob.name + ' ...';
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/update', true);
+                xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+                xhr.upload.onprogress = function (e) {
+                  if (e.lengthComputable) {
+                    setProg((e.loaded / e.total) * 100);
+                  }
+                };
+                xhr.onload = function () {
+                  logln('HTTP ' + xhr.status);
+                  logln(xhr.responseText || '');
+                  if (xhr.status === 200) {
+                    setProg(100);
+                    msg.textContent = 'Done';
+                  } else {
+                    msg.textContent = 'HTTP ' + xhr.status;
+                  }
+                };
+                xhr.onerror = function () {
+                  logln('Network error');
+                  msg.textContent = 'Network error';
+                };
+                xhr.ontimeout = function () {
+                  logln('Timeout');
+                  msg.textContent = 'Timeout';
+                };
+                try {
+                  xhr.send(blob);
+                } catch (e) {
+                  logln('Send failed: ' + e);
+                  msg.textContent = 'Send failed';
+                }
+              },
+              false
+            );
+          },
+          false
+        );
+      </script>
+    </div>
   </body>
 </html>
