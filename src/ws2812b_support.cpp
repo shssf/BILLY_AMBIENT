@@ -27,6 +27,7 @@ struct RgbType
 #define LED_COUNT         84
 #define SEG_COUNT         4
 #define SEG_LENGTH        21
+#define SEG_AMBIENT_ID    4
 #define DIMMING_INCREMENT 5
 
 static led_strip_handle_t s_strip = NULL;
@@ -94,6 +95,7 @@ static inline int32_t linear_to_srgb(float value)
 static RgbType dimmer(const uint32_t id)
 {
   const RgbType& input = colors[id];
+  const RgbType& target = (id == SEG_AMBIENT_ID) ? RgbType{0, 0, 0} : colors[SEG_AMBIENT_ID];
   const uint32_t& step = dimming_step[id];
 
   if (!step)
@@ -103,27 +105,32 @@ static RgbType dimmer(const uint32_t id)
 
   if (step >= 255)
   {
-    return {0, 0, 0};
+    return target;
   }
 
-  /* Convert "step" to brightness factor [0..1] where 1 = full, 0 = black */
-  const float k = 1.0f - (static_cast<float>(step) / 255.0f);
+  /* Convert "step" to interpolation factor [0..1] where 0 = input, 1 = target */
+  const float interpolation_factor = clamp01f(static_cast<float>(step) / 255.0f);
+  const float source_weight = 1.0f - interpolation_factor;
 
   /* sRGB -> linear */
-  float rl = srgb_to_linear(input.r);
-  float gl = srgb_to_linear(input.g);
-  float bl = srgb_to_linear(input.b);
+  float source_linear_red = srgb_to_linear(input.r);
+  float source_linear_green = srgb_to_linear(input.g);
+  float source_linear_blue = srgb_to_linear(input.b);
+  const float target_linear_red = srgb_to_linear(target.r);
+  const float target_linear_green = srgb_to_linear(target.g);
+  const float target_linear_blue = srgb_to_linear(target.b);
 
   /* Scale brightness in linear domain */
-  rl *= k;
-  gl *= k;
-  bl *= k;
+  source_linear_red = (source_linear_red * source_weight) + (target_linear_red * interpolation_factor);
+  source_linear_green = (source_linear_green * source_weight) + (target_linear_green * interpolation_factor);
+  source_linear_blue = (source_linear_blue * source_weight) + (target_linear_blue * interpolation_factor);
 
   /* linear -> sRGB and pack to 8-bit */
   RgbType out;
-  out.r = linear_to_srgb(rl);
-  out.g = linear_to_srgb(gl);
-  out.b = linear_to_srgb(bl);
+  out.r = linear_to_srgb(source_linear_red);
+  out.g = linear_to_srgb(source_linear_green);
+  out.b = linear_to_srgb(source_linear_blue);
+
   return out;
 }
 
@@ -135,13 +142,15 @@ void update_dimming(const bool sensor_status, const uint32_t id)
   }
   else
   {
-    dimming_step[id] += DIMMING_INCREMENT;
+    dimming_step[id] = std::min<uint32_t>(dimming_step[id] + DIMMING_INCREMENT, 255);
   }
 }
 
 void stop_dimming(const RgbType& dimmed, const uint32_t id)
 {
-  if (dimmed.r == 0 && dimmed.g == 0 && dimmed.b == 0)
+  const RgbType target = (id == SEG_AMBIENT_ID) ? RgbType{0, 0, 0} : colors[SEG_AMBIENT_ID];
+
+  if (dimmed.r == target.r && dimmed.g == target.g && dimmed.b == target.b)
   {
     dimming_step[id] = 0;
   }
@@ -171,9 +180,9 @@ static void ws2812b_led_task(void* arg)
         const bool s6 = pir312_get_state(5); // right-rigth guard sensor
         const bool any_active = s1 || s2 || s3 || s4 || s5 || s6;
 
-        if (any_active || dimming_step[4])
+        if (any_active || dimming_step[SEG_AMBIENT_ID])
         {
-          const uint32_t id = 4;
+          const uint32_t id = SEG_AMBIENT_ID;
           update_dimming(any_active, id);
           const RgbType dimmed = dimmer(id);
           for (int i = 0; i < LED_COUNT; ++i)
