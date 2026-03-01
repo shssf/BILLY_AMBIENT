@@ -28,15 +28,15 @@ struct RgbType
 #define SEG_COUNT         4
 #define SEG_LENGTH        21
 #define SEG_AMBIENT_ID    4
-#define DIMMING_INCREMENT 5
+#define DIMMING_INCREMENT 3
 
 static led_strip_handle_t s_strip = NULL;
 static const RgbType colors[SEG_COUNT + 1] = {
-    {150, 0, 255}, // left-left closet
-    {150, 0, 255}, // left-center closet
-    {150, 0, 255}, // right-center closet
-    {150, 0, 255}, // right-right closet
-    {50,  0, 10 }  // ambient
+    {55, 0, 220}, // left-left closet
+    {55, 0, 220}, // left-center closet
+    {55, 0, 220}, // right-center closet
+    {55, 0, 220}, // right-right closet
+    {50, 0, 10 }  // ambient
 };
 static uint32_t dimming_step[SEG_COUNT + 1] = {0, 0, 0, 0, 0};
 
@@ -247,7 +247,7 @@ static void ws2812b_led_task(void* arg)
       }
       CHECK_ERR(led_strip_refresh(s_strip));
     }
-    vTaskDelay(pdMS_TO_TICKS(100)); // 0.1 sec
+    vTaskDelay(pdMS_TO_TICKS(64)); // 0.064 sec
   }
 }
 
