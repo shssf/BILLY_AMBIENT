@@ -32,11 +32,11 @@ struct RgbType
 
 static led_strip_handle_t s_strip = NULL;
 static const RgbType colors[SEG_COUNT + 1] = {
-    {55, 0, 220}, // left-left closet
-    {55, 0, 220}, // left-center closet
-    {55, 0, 220}, // right-center closet
-    {55, 0, 220}, // right-right closet
-    {50, 0, 10 }  // ambient
+    {255, 0, 94}, // left-left closet
+    {255, 0, 94}, // left-center closet
+    {255, 0, 94}, // right-center closet
+    {255, 0, 94}, // right-right closet
+    {50,  0, 10}  // ambient
 };
 static uint32_t dimming_step[SEG_COUNT + 1] = {0, 0, 0, 0, 0};
 
