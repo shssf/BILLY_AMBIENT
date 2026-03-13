@@ -3,9 +3,10 @@
 #include "light_sensor_support.h"
 #include "utils.h"
 
-static const char* TAG = "Light Sensor";
-static const int light_threshold = 2000; // limits are: 900 with light, 4095 with dark
-static const adc_channel_t channel = ADC_CHANNEL_6;
+static constexpr char* TAG = "Light Sensor";
+static constexpr int light_threshold = 3000;           // limits are: 900 with light, 4095 with dark
+static constexpr int light_threshold_hysteresis = 200; // hysteresis half-width
+static constexpr adc_channel_t channel = ADC_CHANNEL_6;
 static adc_oneshot_unit_handle_t handle = nullptr;
 
 void light_sensor_init()
@@ -59,13 +60,24 @@ static inline int read_sensor()
 
 bool light_sensor_is_light()
 {
-    const int raw = read_sensor();
-    return raw < light_threshold;
+  constexpr int low = light_threshold - light_threshold_hysteresis;
+  constexpr int high = light_threshold + light_threshold_hysteresis;
+
+  static bool status = false;
+
+  const int raw = read_sensor();
+
+  if (status ? (raw > high) : (raw < low))
+  {
+    status = !status;
+  }
+
+  return status;
 }
 
 int light_sensor_get_value()
 {
-    return read_sensor();
+  return read_sensor();
 }
 
 extern "C" void light_sensor_dump(void)
